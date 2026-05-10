@@ -1,54 +1,50 @@
 <script setup lang="ts">
-import type { OsType } from "@tauri-apps/plugin-os"
-import { twMerge } from "tailwind-merge"
-import { onMounted, ref } from "vue"
-import type { WindowControlsProps, WindowTitlebarProps } from "./types"
-import { getOsType } from "./utils/os"
-import WindowControls from "./WindowControls.vue"
+import type { OsType } from "@tauri-apps/plugin-os";
+import { twMerge } from "tailwind-merge";
+import { ref } from "vue";
+import type { WindowControlsProps, WindowTitlebarProps } from "./types";
+import { getOsType } from "./utils/os";
+import WindowControls from "./WindowControls.vue";
 
-const { controlsOrder, windowControlsProps } = withDefaults(
-  defineProps<WindowTitlebarProps>(),
-  {
-    controlsOrder: "system",
-  }
-)
+const props = withDefaults(defineProps<WindowTitlebarProps>(), {
+  controlsOrder: "system",
+});
 
-const osType = ref<OsType | undefined>(undefined)
+const osType = ref<OsType | undefined>(undefined);
 
-onMounted(() => {
-  getOsType().then((type) => {
-    osType.value = type
-  })
-})
+const init = async () => {
+  const type = await getOsType();
+  console.log("WindowTitlebar osType", type);
+  if (type === "unknown") return;
+  osType.value = type;
+};
 
 const left =
-  controlsOrder === "left" ||
-  (controlsOrder === "platform" && windowControlsProps?.platform === "macos") ||
-  (controlsOrder === "system" && osType.value === "macos")
+  props.controlsOrder === "left" ||
+  (props.controlsOrder === "platform" && props.windowControlsProps?.platform === "macos") ||
+  (props.controlsOrder === "system" && osType.value === "macos");
 
 const customProps = (ml: string) => {
-  if (windowControlsProps?.justify !== undefined) return windowControlsProps
+  if (props.windowControlsProps?.justify !== undefined) return props.windowControlsProps;
 
   const {
     justify: windowControlsJustify,
     className: windowControlsClassName,
     ...restProps
-  } = windowControlsProps || {}
+  } = props.windowControlsProps || {};
   return {
     justify: false,
     className: twMerge(windowControlsClassName, ml),
     ...restProps,
-  } as WindowControlsProps
-}
+  } as WindowControlsProps;
+};
+init();
 </script>
 
 <template>
   <div
     :class="
-      twMerge(
-        'bg-background flex select-none flex-row overflow-hidden',
-        $attrs.class as string
-      )
+      twMerge('bg-background flex select-none flex-row overflow-hidden', $attrs.class as string)
     "
     data-tauri-drag-region
   >

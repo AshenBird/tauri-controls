@@ -1,18 +1,30 @@
 import type { window } from "@tauri-apps/api"
+import { isTauri } from "@tauri-apps/api/core"
 import { ref } from "vue"
 
 export const appWindow = ref<window.Window | null>(null)
 export const isWindowMaximized = ref(false)
 
-import("@tauri-apps/api").then((module) => {
-  appWindow.value = module.window.getCurrent()
-  appWindow.value.onResized(async () => {
-    const isMaximized = await appWindow.value?.isMaximized()
-    if (isMaximized !== undefined) {
-      isWindowMaximized.value = isMaximized
-    }
+const windowResizeHandle = async function(){
+  const isMaximized = await appWindow.value?.isMaximized()
+  if (isMaximized !== undefined) {
+    isWindowMaximized.value = isMaximized
+  }
+};
+
+(async function initWindow() {
+  if (!isTauri()) return
+  
+ const module = await import("@tauri-apps/api/window")
+  appWindow.value = module.getCurrentWindow()
+
+  appWindow.value.onResized(windowResizeHandle).catch((err) => {
+    console.error("windowResizeHandle error", err)
   })
-})
+})().catch((err) => {
+  console.error("initWindow error", err)
+});
+
 
 export const minimizeWindow = async () => {
   await appWindow.value?.minimize()
